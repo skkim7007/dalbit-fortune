@@ -1,0 +1,37 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { JSDOM } = require('jsdom');
+
+test('번들에서 사주, 질문, 한자 작명 흐름이 동작한다', async () => {
+  const root = path.join(__dirname, '..');
+  const dom = new JSDOM(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), { runScripts: 'outside-only', url: 'https://example.test/' });
+  dom.window.HTMLElement.prototype.scrollIntoView = () => {};
+  dom.window.eval(fs.readFileSync(path.join(root, 'app.js'), 'utf8'));
+  const document = dom.window.document;
+  const $ = id => document.getElementById(id);
+  const submit = id => $(id).dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+  $('birthDate').value = '1990-03-15';
+  $('gender').value = 'male';
+  submit('birth-form');
+  assert.equal($('result').hidden, false);
+  assert.match($('result').textContent, /기묘/);
+  assert.match($('result').textContent, /시간 미상/);
+  $('question-input').value = '직업이 궁금해요';
+  submit('question-form');
+  assert.match($('messages').textContent, /일과 진로/);
+  $('surname').value = '김';
+  $('surnameHanja').value = '金';
+  $('candidates').value = '서아, 瑞雅\n지유';
+  submit('naming-form');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match($('naming-result').textContent, /김서아/);
+  assert.match($('naming-result').textContent, /김지유/);
+  $('birthDate').dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+  assert.equal($('result').hidden, true);
+  $('question-input').value = '연애운';
+  submit('question-form');
+  assert.match($('messages').lastChild.textContent, /먼저/);
+  dom.window.close();
+});

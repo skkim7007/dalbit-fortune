@@ -1,0 +1,18 @@
+{
+  "name": "dalbit-fortune",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/app.js --bundle --minify --platform=browser --outfile=app.js",
+    "pretest": "npm run build",
+    "test": "node --test test/*.test.cjs"
+  },
+  "dependencies": {
+    "naming-house": "0.2.1",
+    "saju-fortune": "0.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^30.1.3"
+  }
+}
